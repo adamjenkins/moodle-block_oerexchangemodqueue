@@ -76,14 +76,28 @@ class block_oerexchangemodqueue extends block_base {
 
         // Defense-in-depth: db/access.php should already stop non-managers
         // from adding this block, but re-check the real controlling
-        // capability here so content is never shown to a user who
+        // capabilities here so content is never shown to a user who
         // shouldn't see it, regardless of how the instance got added.
-        if (!has_capability('local/oerexchange:moderate', context_system::instance())) {
+        //
+        // Two separate capabilities, checked separately (found in a
+        // 2026-07-19 code review): reports/failed-parses link to
+        // moderate.php, gated on local/oerexchange:moderate; pending sites
+        // link to manage_sites.php, gated on the DIFFERENT capability
+        // local/oerexchange:managesites. Both default to the manager
+        // archetype, so this split is invisible in the default install,
+        // but a custom role holding only one of the two would previously
+        // either see a dead link to a page they can't reach, or have the
+        // whole block hidden despite holding the capability for one of its
+        // three sections. Show only the sections the viewer can act on.
+        $context = context_system::instance();
+        $canmoderate = has_capability('local/oerexchange:moderate', $context);
+        $canmanagesites = has_capability('local/oerexchange:managesites', $context);
+        if (!$canmoderate && !$canmanagesites) {
             return $this->content;
         }
 
         $summary = content_builder::get_summary();
-        $this->content->text = $this->render_summary($summary);
+        $this->content->text = $this->render_summary($summary, $canmoderate, $canmanagesites);
 
         return $this->content;
     }
@@ -92,43 +106,49 @@ class block_oerexchangemodqueue extends block_base {
      * Render the moderation-queue summary as block content markup.
      *
      * @param array $summary as returned by content_builder::get_summary()
+     * @param bool $canmoderate viewer holds local/oerexchange:moderate — show reports/failed-parses
+     * @param bool $canmanagesites viewer holds local/oerexchange:managesites — show pending sites
      * @return string
      */
-    protected function render_summary(array $summary): string {
+    protected function render_summary(array $summary, bool $canmoderate, bool $canmanagesites): string {
         $moderateurl = new moodle_url('/local/oerexchange/moderate.php');
         $sitesurl = new moodle_url('/local/oerexchange/manage_sites.php');
 
         $sections = [];
-        $sections[] = $this->render_section(
-            get_string('modqueue_openreports', 'block_oerexchangemodqueue', $summary['reportcount']),
-            $moderateurl,
-            $summary['reports'],
-            function (stdClass $report): string {
-                $title = $report->resourcetitle !== null
-                    ? $report->resourcetitle
-                    : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
-                return s($title);
-            }
-        );
-        $sections[] = $this->render_section(
-            get_string('modqueue_failedparses', 'block_oerexchangemodqueue', $summary['failedparsecount']),
-            $moderateurl,
-            $summary['failedparses'],
-            function (stdClass $version): string {
-                $title = $version->resourcetitle !== null
-                    ? $version->resourcetitle
-                    : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
-                return s($title);
-            }
-        );
-        $sections[] = $this->render_section(
-            get_string('modqueue_pendingsites', 'block_oerexchangemodqueue', $summary['sitecount']),
-            $sitesurl,
-            $summary['sites'],
-            function (stdClass $site): string {
-                return s($site->name);
-            }
-        );
+        if ($canmoderate) {
+            $sections[] = $this->render_section(
+                get_string('modqueue_openreports', 'block_oerexchangemodqueue', $summary['reportcount']),
+                $moderateurl,
+                $summary['reports'],
+                function (stdClass $report): string {
+                    $title = $report->resourcetitle !== null
+                        ? $report->resourcetitle
+                        : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
+                    return s($title);
+                }
+            );
+            $sections[] = $this->render_section(
+                get_string('modqueue_failedparses', 'block_oerexchangemodqueue', $summary['failedparsecount']),
+                $moderateurl,
+                $summary['failedparses'],
+                function (stdClass $version): string {
+                    $title = $version->resourcetitle !== null
+                        ? $version->resourcetitle
+                        : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
+                    return s($title);
+                }
+            );
+        }
+        if ($canmanagesites) {
+            $sections[] = $this->render_section(
+                get_string('modqueue_pendingsites', 'block_oerexchangemodqueue', $summary['sitecount']),
+                $sitesurl,
+                $summary['sites'],
+                function (stdClass $site): string {
+                    return s($site->name);
+                }
+            );
+        }
 
         return implode('', $sections);
     }

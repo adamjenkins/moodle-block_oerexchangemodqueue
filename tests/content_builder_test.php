@@ -269,4 +269,66 @@ final class content_builder_test extends \advanced_testcase {
         $this->assertNotSame('', $content->text);
         $this->assertStringContainsString('Visible to moderators', $content->text);
     }
+
+    /**
+     * Found in a 2026-07-19 code review: the block used to gate ALL three
+     * sections on local/oerexchange:moderate alone, even though the
+     * "pending sites" section links to manage_sites.php, which actually
+     * requires the DIFFERENT capability local/oerexchange:managesites. A
+     * user holding only local/oerexchange:moderate (a real, if unusual,
+     * custom-role configuration - the two capabilities default to the same
+     * archetype but are declared separately) used to see a "pending sites"
+     * count and a dead link to a page they can't reach. Now they see the
+     * reports/failed-parses sections they CAN act on, and the sites
+     * section is simply omitted rather than shown-but-broken.
+     */
+    public function test_get_content_hides_pending_sites_from_a_moderator_who_cannot_manage_sites(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $siteid = $this->insert_site('active', time());
+        $resourceid = $this->insert_resource($siteid, 'A reported resource');
+        $this->insert_report($resourceid, 'open', time());
+        $this->insert_site('pending', time());
+
+        $roleid = create_role('Moderate only', 'moderateonly', 'Holds moderate but not managesites');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        assign_capability('local/oerexchange:moderate', CAP_ALLOW, $roleid, \context_system::instance()->id);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($roleid, $user->id, \context_system::instance()->id);
+        $this->setUser($user);
+
+        $block = $this->new_block();
+        $content = $block->get_content();
+
+        $this->assertStringContainsString('A reported resource', $content->text);
+        $this->assertStringNotContainsString('manage_sites.php', $content->text);
+    }
+
+    /**
+     * The mirror case: a user holding only managesites (not moderate) sees
+     * the pending-sites section they can act on, but not reports/failed
+     * parses, which link to moderate.php - a page they can't reach.
+     */
+    public function test_get_content_shows_only_pending_sites_for_a_site_manager_who_cannot_moderate(): void {
+        $this->resetAfterTest();
+
+        $siteid = $this->insert_site('active', time());
+        $resourceid = $this->insert_resource($siteid, 'A reported resource');
+        $this->insert_report($resourceid, 'open', time());
+        $this->insert_site('pending', time());
+
+        $roleid = create_role('Manage sites only', 'managesitesonly', 'Holds managesites but not moderate');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        assign_capability('local/oerexchange:managesites', CAP_ALLOW, $roleid, \context_system::instance()->id);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($roleid, $user->id, \context_system::instance()->id);
+        $this->setUser($user);
+
+        $block = $this->new_block();
+        $content = $block->get_content();
+
+        $this->assertStringNotContainsString('A reported resource', $content->text);
+        $this->assertStringContainsString('manage_sites.php', $content->text);
+    }
 }
