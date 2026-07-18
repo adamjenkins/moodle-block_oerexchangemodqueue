@@ -1,0 +1,21 @@
+{
+    "name": "adamjenkins/moodle-block_oerexchangemodqueue",
+    "description": "Dashboard block for OER Exchange moderators: pending reports, failed backup parses, and pending site registrations at a glance.",
+    "type": "moodle-block",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Adam Jenkins",
+            "email": "adam@wisecat.net"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/adamjenkins/moodle-block_oerexchangemodqueue/issues",
+        "source": "https://github.com/adamjenkins/moodle-block_oerexchangemodqueue"
+    },
+    "require": {
+        "moodle/moodle": ">=5.0 <5.3",
+        "moodle/composer-installer": "^1.0",
+        "adamjenkins/moodle-local_oerexchange": "*"
+    }
+}
