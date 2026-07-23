@@ -4,10 +4,11 @@ A Moodle Dashboard block for **OER Exchange** moderators: a single
 at-a-glance summary of what needs attention, with links straight to the
 pages that let you act on it.
 
-This block requires the `local/oerexchange:moderate` capability — it is
-not offered in the block picker to anyone else, and even if an instance
-somehow ended up on a page, it renders empty content for a user who lacks
-the capability.
+Each section is gated on its own capability: reports and failed parses on
+`local/oerexchange:moderate`, pending site registrations on
+`local/oerexchange:managesites`. A user holding neither sees empty content
+even if an instance somehow ended up on their page, so someone who only
+approves site registrations gets that section and nothing else.
 
 ## What it shows
 
@@ -30,8 +31,9 @@ of its own. It is presentation-layer only.
   must already be installed — `version.php` declares it as a hard
   dependency and the Moodle installer will refuse to install this block
   without it.
-- The viewing/adding user needs the `local/oerexchange:moderate`
-  capability (granted to the `manager` archetype by default).
+- The viewing/adding user needs `local/oerexchange:moderate` or
+  `local/oerexchange:managesites` (both granted to the `manager` archetype
+  by default); each governs its own section of the block.
 
 ## Installation
 
