@@ -3,6 +3,24 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [0.1.1] - 2026-07-27
+
+### Fixed
+
+- `$plugin->requires` corrected from Moodle 4.5 to 5.0 (2025041400),
+  matching `$plugin->supported`, composer.json and the CI matrix.
+
+### Changed
+
+- The recent-reports and recent-failed-parses lists use one LEFT JOIN
+  query each instead of a lookup per row, preserving the deleted-resource
+  -> placeholder-label behaviour the tests pin down.
+- `content_builder::get_summary()` takes the two capability flags so
+  sections the viewer cannot see cost no queries.
+- Deprecated doc-comment `@covers` migrated to CoversClass attributes;
+  stale docblocks (single-capability gate, README's never-true claim that
+  queue items link to the reported resource) refreshed.
+
 ## [0.1.0] - 2026-07-19
 
 ### Added
