@@ -13,7 +13,7 @@ approves site registrations gets that section and nothing else.
 ## What it shows
 
 - **Open reports** — count, and the oldest few still awaiting review, each
-  linking to the reported resource. Links through to `moderate.php`.
+  Links through to `moderate.php`.
 - **Failed parses** — count, and the most recent backup uploads whose
   structure parsing failed. Links through to `moderate.php`.
 - **Pending site registrations** — count, and the oldest few sites still

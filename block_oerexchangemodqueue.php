@@ -27,8 +27,11 @@ use block_oerexchangemodqueue\local\content_builder;
  * Visibility is gated twice, deliberately (this is the one Exchange block
  * NOT meant for every logged-in account): db/access.php restricts who can
  * add the block instance to the 'manager' archetype, and get_content()
- * below independently re-checks local/oerexchange:moderate before showing
+ * below independently re-checks the viewer's capabilities before showing
  * anything, as a defense-in-depth safety net rather than a substitute.
+ * Two capabilities gate two different section groups: reports and failed
+ * parses need local/oerexchange:moderate, pending sites needs
+ * local/oerexchange:managesites — see the comment inside get_content().
  *
  * @package    block_oerexchangemodqueue
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -96,7 +99,7 @@ class block_oerexchangemodqueue extends block_base {
             return $this->content;
         }
 
-        $summary = content_builder::get_summary();
+        $summary = content_builder::get_summary($canmoderate, $canmanagesites);
         $this->content->text = $this->render_summary($summary, $canmoderate, $canmanagesites);
 
         return $this->content;

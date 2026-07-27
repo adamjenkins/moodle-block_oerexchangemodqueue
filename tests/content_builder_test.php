@@ -25,8 +25,9 @@ use block_oerexchangemodqueue\local\content_builder;
  * @package    block_oerexchangemodqueue
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \block_oerexchangemodqueue\local\content_builder
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(content_builder::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\block_oerexchangemodqueue::class)]
 final class content_builder_test extends \advanced_testcase {
     /**
      * Construct a fresh block_oerexchangemodqueue instance, ready for

@@ -21,9 +21,10 @@
  * moderation-sensitive data (open reports, failed parses, pending site
  * registrations), so only the 'manager' archetype can add it — NOT
  * 'editingteacher', unlike block_oerexchangebrowse/shares/quicklinks. The
- * real content-visibility gate is local/oerexchange:moderate, checked
- * explicitly in get_content(); these capabilities only control who can add
- * the block instance in the first place.
+ * real content-visibility gates are local/oerexchange:moderate (reports and
+ * failed-parses sections) and local/oerexchange:managesites (pending-sites
+ * section), each checked explicitly in get_content(); these capabilities
+ * only control who can add the block instance in the first place.
  *
  * @package    block_oerexchangemodqueue
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>

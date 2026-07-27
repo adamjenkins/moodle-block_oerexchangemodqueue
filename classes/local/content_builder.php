@@ -34,22 +34,27 @@ class content_builder {
     const RECENT_LIMIT = 5;
 
     /**
-     * Build the full moderation-queue summary.
+     * Build the moderation-queue summary — only the sections the caller
+     * will actually render. The block passes its two capability results
+     * here so a viewer holding only one capability doesn't cost the
+     * queries (and discarded results) of the sections they can't see.
      *
+     * @param bool $includemoderation reports + failed parses (viewer holds local/oerexchange:moderate)
+     * @param bool $includesites pending sites (viewer holds local/oerexchange:managesites)
      * @return array{
      *     reportcount: int, reports: \stdClass[],
      *     failedparsecount: int, failedparses: \stdClass[],
      *     sitecount: int, sites: \stdClass[]
      * }
      */
-    public static function get_summary(): array {
+    public static function get_summary(bool $includemoderation = true, bool $includesites = true): array {
         return [
-            'reportcount' => self::get_open_report_count(),
-            'reports' => self::get_recent_open_reports(),
-            'failedparsecount' => self::get_failed_parse_count(),
-            'failedparses' => self::get_recent_failed_parses(),
-            'sitecount' => self::get_pending_site_count(),
-            'sites' => self::get_recent_pending_sites(),
+            'reportcount' => $includemoderation ? self::get_open_report_count() : 0,
+            'reports' => $includemoderation ? self::get_recent_open_reports() : [],
+            'failedparsecount' => $includemoderation ? self::get_failed_parse_count() : 0,
+            'failedparses' => $includemoderation ? self::get_recent_failed_parses() : [],
+            'sitecount' => $includesites ? self::get_pending_site_count() : 0,
+            'sites' => $includesites ? self::get_recent_pending_sites() : [],
         ];
     }
 
@@ -72,22 +77,19 @@ class content_builder {
     public static function get_recent_open_reports(): array {
         global $DB;
 
-        $reports = $DB->get_records(
-            'local_oerexchange_reports',
+        // LEFT JOIN so a report whose resource row is gone still lists, with
+        // resourcetitle null (rendered as the "deleted resource" label) —
+        // and one query instead of one per row.
+        return array_values($DB->get_records_sql(
+            "SELECT r.*, res.title AS resourcetitle
+               FROM {local_oerexchange_reports} r
+          LEFT JOIN {local_oerexchange_resources} res ON res.id = r.resourceid
+              WHERE r.status = :status
+           ORDER BY r.timecreated ASC",
             ['status' => 'open'],
-            'timecreated ASC',
-            '*',
             0,
             self::RECENT_LIMIT
-        );
-
-        $items = [];
-        foreach ($reports as $report) {
-            $resource = $DB->get_record('local_oerexchange_resources', ['id' => $report->resourceid]);
-            $report->resourcetitle = $resource ? $resource->title : null;
-            $items[] = $report;
-        }
-        return $items;
+        ));
     }
 
     /**
@@ -110,22 +112,17 @@ class content_builder {
     public static function get_recent_failed_parses(): array {
         global $DB;
 
-        $versions = $DB->get_records(
-            'local_oerexchange_versions',
+        // Same LEFT JOIN rationale as get_recent_open_reports().
+        return array_values($DB->get_records_sql(
+            "SELECT v.*, res.title AS resourcetitle
+               FROM {local_oerexchange_versions} v
+          LEFT JOIN {local_oerexchange_resources} res ON res.id = v.resourceid
+              WHERE v.status = :status
+           ORDER BY v.timecreated DESC",
             ['status' => 'failed'],
-            'timecreated DESC',
-            '*',
             0,
             self::RECENT_LIMIT
-        );
-
-        $items = [];
-        foreach ($versions as $version) {
-            $resource = $DB->get_record('local_oerexchange_resources', ['id' => $version->resourceid]);
-            $version->resourcetitle = $resource ? $resource->title : null;
-            $items[] = $version;
-        }
-        return $items;
+        ));
     }
 
     /**
