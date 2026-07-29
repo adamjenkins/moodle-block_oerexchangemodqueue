@@ -1,8 +1,9 @@
-# Release notes — 0.1.1
+# Release notes — 1.0.0
 
-Review-round housekeeping. The installation floor is corrected to Moodle
-5.0 (the old value permitted untested 4.5 installs), the block's two
-recent-item lists are built with single JOIN queries instead of one query
-per row, and a viewer holding only one of the two gate capabilities no
-longer pays for queries whose results were never rendered. Documentation
-that still described the old single-capability gate was refreshed.
+The first stable release. The block is declared `MATURITY_STABLE`.
+
+There is **no functional change** since 0.1.1. This release marks the OER
+Exchange suite's first stable version, which all seven plugins take together
+so that a site never has to reason about a stable plugin depending on an alpha
+one. The block's separately gated sections — open reports, failed parses and
+pending site registrations — and its single-JOIN queries are unchanged.

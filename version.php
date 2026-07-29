@@ -25,14 +25,14 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'block_oerexchangemodqueue';
-$plugin->version   = 2026072700;
+$plugin->version   = 2026072900;
 // 2025041400 = the Moodle 5.0 branching version — matches $supported's floor
 // (and composer.json's ">=5.0 <5.3"); was 2024100700 (Moodle 4.5), which let
 // a site below the tested range install the plugin.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 502];
-$plugin->release   = '0.1.1';
-$plugin->maturity  = MATURITY_ALPHA;
+$plugin->release   = '1.0.0';
+$plugin->maturity  = MATURITY_STABLE;
 
 // This block is presentation-layer only: it reads local_oerexchange's own
 // tables directly and has no data or logic of its own. Moodle has no
