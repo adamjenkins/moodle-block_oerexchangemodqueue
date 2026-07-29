@@ -1,0 +1,34 @@
+# camp listing manifest — descriptive content for your plugin's page.
+# Edit freely and commit; camp ingests this file at each tagged release.
+# Schema: https://camp-registry.org/schema/listing.schema.json
+name: "OER Exchange: moderation queue"
+summary: "A Moodle Dashboard block for OER Exchange moderators: an at-a-glance summary of what needs attention, linking straight to the pages that act on it."
+description: |
+  Three sections, each counting what is outstanding and listing the first few
+  items:
+
+  - **Open reports** — reports still awaiting review, oldest first.
+  - **Failed parses** — the most recent backup uploads whose structure parsing
+    failed.
+  - **Pending site registrations** — sites still awaiting approval, oldest
+    first.
+
+  Each section is gated on its own capability: reports and failed parses on
+  `local/oerexchange:moderate`, pending site registrations on
+  `local/oerexchange:managesites`. Someone who only approves site registrations
+  therefore sees that section and nothing else, and a user holding neither
+  capability sees empty content even if an instance somehow ended up on their
+  page.
+
+  All data is read directly from `local_oerexchange`'s own tables. This block
+  has no database schema, settings or business logic of its own: it is
+  presentation-layer only, and Moodle will refuse to install it without
+  `local_oerexchange` present.
+labels:
+  - fully-free
+links:
+  docs: https://github.com/adamjenkins/moodle-block_oerexchangemodqueue#readme
+  issues: https://github.com/adamjenkins/moodle-block_oerexchangemodqueue/issues
+# screenshots:
+#   - path: .camp/screenshots/overview.png
+#     caption: Main view
