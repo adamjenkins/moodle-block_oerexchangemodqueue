@@ -127,7 +127,7 @@ class block_oerexchangemodqueue extends block_base {
                     $title = $report->resourcetitle !== null
                         ? $report->resourcetitle
                         : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
-                    return s($title);
+                    return format_string($title, true, ['context' => \core\context\system::instance()]);
                 }
             );
             $sections[] = $this->render_section(
@@ -138,7 +138,7 @@ class block_oerexchangemodqueue extends block_base {
                     $title = $version->resourcetitle !== null
                         ? $version->resourcetitle
                         : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
-                    return s($title);
+                    return format_string($title, true, ['context' => \core\context\system::instance()]);
                 }
             );
         }

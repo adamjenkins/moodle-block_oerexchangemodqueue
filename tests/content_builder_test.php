@@ -332,4 +332,45 @@ final class content_builder_test extends \advanced_testcase {
         $this->assertStringNotContainsString('A reported resource', $content->text);
         $this->assertStringContainsString('manage_sites.php', $content->text);
     }
+
+    /**
+     * Regression test: report/failed-parse titles used to render through
+     * s($title), so a multilang-marked-up resource title showed as raw
+     * `<span lang="en" class="multilang">...` markup instead of collapsing
+     * to one language. Enables the filter trio locally rather than relying
+     * on site config, and pins the double-escape guard (a title containing
+     * `&` must be escaped exactly once).
+     */
+    public function test_get_content_renders_reported_and_failed_parse_titles_through_multilang(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        filter_set_global_state('multilang', TEXTFILTER_ON);
+        set_config('filterall', 1);
+        set_config('stringfilters', 'multilang');
+
+        $title = '<span lang="en" class="multilang">Coastal &amp; Marine Studies</span>'
+            . '<span lang="ja" class="multilang">沿岸海洋学</span>';
+
+        $siteid = $this->insert_site('active', time());
+        $resourceid = $this->insert_resource($siteid, $title);
+        $this->insert_report($resourceid, 'open', time());
+        $this->insert_version($resourceid, 'failed', time());
+
+        $manager = $this->getDataGenerator()->create_user();
+        $managerroleid = $DB->get_field('role', 'id', ['shortname' => 'manager'], MUST_EXIST);
+        role_assign($managerroleid, $manager->id, \context_system::instance()->id);
+        $this->setUser($manager);
+
+        $block = $this->new_block();
+        $content = $block->get_content();
+
+        $this->assertStringNotContainsString('沿岸海洋学', $content->text);
+        $this->assertStringNotContainsString('multilang', $content->text);
+        $this->assertStringNotContainsString('&amp;amp;', $content->text);
+        // The title appears twice (reports section, failed-parses section),
+        // each occurrence escaped exactly once.
+        $this->assertSame(2, substr_count($content->text, 'Coastal &amp; Marine Studies'));
+        $this->assertSame(0, substr_count($content->text, 'Coastal & Marine Studies'));
+    }
 }
