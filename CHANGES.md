@@ -1,13 +1,10 @@
-# Release notes — 1.0.1
+# Release notes — 1.0.2
 
-No change to the plugin itself. This release exists to fix release
-publication to the camp registry: the previous release workflow pinned
-camp-tools v0.2.25, whose index-entry schema predates the `source-repo-id`
-field the registry added to every claimed entry on 2026-07-28 (OIDC trusted
-publishing), so publication of v1.0.0 could not succeed. The workflow is
-replaced with the registry's current tokenless template (OIDC trusted
-publishing, camp-tools v0.2.35); no access token, fork or repository secret
-is needed any more.
+Reported and failed-parse resource titles in the moderation queue previously
+rendered any multilang markup as literal text, even with the site's multilang
+filter enabled — a live, user-reported bug on the Exchange. Both title sinks
+now render through the site's filters (matching
+`block_oerexchangeshares`'s already-correct pattern), so a bilingual
+resource's title shows in whichever language the moderator has selected.
 
-The installable plugin code is identical to 1.0.0 apart from the version
-metadata — the workflow file is excluded from the distribution ZIP.
+No database or capability changes. No action is required after upgrading.
