@@ -148,7 +148,11 @@ class block_oerexchangemodqueue extends block_base {
                 $sitesurl,
                 $summary['sites'],
                 function (stdClass $site): string {
-                    return s($site->name);
+                    // A registering site's own display name is human-readable
+                    // free text, so it gets the same filtering as a resource
+                    // title above: s() would render a multilang-marked-up
+                    // site name as visible literal `<span ...>` markup.
+                    return format_string($site->name, true, ['context' => \core\context\system::instance()]);
                 }
             );
         }
@@ -164,7 +168,8 @@ class block_oerexchangemodqueue extends block_base {
      * @param string $heading already-formatted heading text (count included)
      * @param moodle_url $url page to link the heading to
      * @param stdClass[] $items recent items for this section
-     * @param callable $itemlabel (stdClass $item): string, already s()-escaped
+     * @param callable $itemlabel (stdClass $item): string, already safe HTML
+     *     (format_string()-filtered, which escapes internally)
      * @return string
      */
     protected function render_section(string $heading, moodle_url $url, array $items, callable $itemlabel): string {

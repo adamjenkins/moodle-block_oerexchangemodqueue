@@ -373,4 +373,55 @@ final class content_builder_test extends \advanced_testcase {
         $this->assertSame(2, substr_count($content->text, 'Coastal &amp; Marine Studies'));
         $this->assertSame(0, substr_count($content->text, 'Coastal & Marine Studies'));
     }
+
+    /**
+     * Regression test for the pending-sites section: the registering site's
+     * own name used to render through s($site->name), so a
+     * multilang-marked-up site name showed as visible literal
+     * `<span lang="en" class="multilang">...` markup instead of collapsing
+     * to one language. A site name is human-readable free text entered at
+     * registration, exactly like a resource title.
+     *
+     * Uses the managesites-only role (not manager) so the assertions can
+     * only be satisfied by the pending-sites section — no report or
+     * failed-parse title is rendered at all in this scenario.
+     */
+    public function test_get_content_renders_pending_site_names_through_multilang(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        filter_set_global_state('multilang', TEXTFILTER_ON);
+        set_config('filterall', 1);
+        set_config('stringfilters', 'multilang');
+
+        $name = '<span lang="en" class="multilang">Arts &amp; Sciences College</span>'
+            . '<span lang="ja" class="multilang">文理大学</span>';
+
+        $DB->insert_record('local_oerexchange_sites', (object) [
+            'name' => $name,
+            'url' => 'https://pending.example.test/',
+            'contact' => 'contact@example.test',
+            'serviceuserid' => null,
+            'status' => 'pending',
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+
+        $roleid = create_role('Manage sites only', 'managesitesonly', 'Holds managesites but not moderate');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        assign_capability('local/oerexchange:managesites', CAP_ALLOW, $roleid, \context_system::instance()->id);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($roleid, $user->id, \context_system::instance()->id);
+        $this->setUser($user);
+
+        $block = $this->new_block();
+        $content = $block->get_content();
+
+        $this->assertStringContainsString('Arts &amp; Sciences College', $content->text);
+        $this->assertStringNotContainsString('文理大学', $content->text);
+        $this->assertStringNotContainsString('multilang', $content->text);
+        $this->assertStringNotContainsString('&amp;amp;', $content->text);
+        // Exactly one escaped ampersand: not raw, and not double-escaped.
+        $this->assertSame(1, substr_count($content->text, '&amp;'));
+    }
 }

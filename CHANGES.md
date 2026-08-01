@@ -1,10 +1,10 @@
-# Release notes — 1.0.2
+# Release notes — 1.0.3
 
-Reported and failed-parse resource titles in the moderation queue previously
-rendered any multilang markup as literal text, even with the site's multilang
-filter enabled — a live, user-reported bug on the Exchange. Both title sinks
-now render through the site's filters (matching
-`block_oerexchangeshares`'s already-correct pattern), so a bilingual
-resource's title shows in whichever language the moderator has selected.
+A registering site's name in the "Sites awaiting approval" section showed
+multilang markup as visible literal text — `<span lang="en" class="multilang">…</span>`
+— instead of the language the moderator is reading in. Resource titles in this
+block were fixed in 1.0.2; site names were missed. They now use
+`format_string()` too.
 
-No database or capability changes. No action is required after upgrading.
+No database changes; no action required after upgrading beyond the usual
+`admin/cli/upgrade.php`.
