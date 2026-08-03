@@ -3,6 +3,23 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.5] - 2026-08-03
+
+### Fixed
+
+- `composer.json` required `adamjenkins/moodle-local_oerexchange` at `"*"`
+  while `version.php` pinned build 2026080400, so the two declarations of the
+  same dependency disagreed. Composer would resolve this block against an
+  older Exchange and install it, leaving Moodle's plugin installer to refuse
+  the pairing afterwards. Now `^1.0.7`, matching the build pin.
+  `composer validate` had been reporting this as an unbound-constraint warning
+  since the file was written; it now passes clean. The `version.php` comment
+  names composer.json as the file to keep in step, since nothing cross-checks
+  them.
+
+No code, string or behaviour change — Composer metadata is fixed at a tag, so
+correcting it requires a new version.
+
 ## [1.0.4] - 2026-08-03
 
 ### Added

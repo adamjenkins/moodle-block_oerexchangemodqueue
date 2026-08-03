@@ -1,35 +1,36 @@
-# Release notes — 1.0.4
+# Release notes — 1.0.5
 
-The block now links to the OER Exchange's new report of resources moderators
-are holding, showing how many there are: **Hidden by moderators (3)**.
+A metadata-only release. No code, no strings, no behaviour change: the plugin
+does exactly what 1.0.4 does.
 
-The moderation queue is about incoming work — open reports and failed parses —
-and nothing led to the standing list of what had already been taken down,
-because until this release the Exchange had no such page.
+## The Composer dependency now matches the Moodle one
 
-The count is moderator takedowns only. Resources the Exchange removes
-automatically as abandoned courseware are excluded: no moderator hid them, and
-counting them under this heading would say otherwise.
+1.0.4 raised this block's dependency on `local_oerexchange` to the build that
+adds the hidden-resources report — but only in `version.php`. `composer.json`
+still asked for `"*"`, any version at all.
 
-The section is shown only to users holding `local/oerexchange:moderate`, like
-the rest of the moderation content in this block.
+The two are read by different installers, so them disagreeing had a practical
+cost: Composer would resolve this block happily alongside an older Exchange,
+install both, and leave Moodle's own plugin installer to refuse the pairing
+afterwards with a dependency error. Composer had what it needed to prevent
+that and did not use it.
 
-## Requires local_oerexchange 1.0.7
+`composer.json` now requires `^1.0.7`, the same floor `version.php` expresses
+as build 2026080400.
 
-This release's dependency on `local_oerexchange` moves from `ANY_VERSION` to
-the build that adds the report page. The block calls no new code from the
-Exchange — it counts the rows itself, as it does for every other figure it
-shows — but against an older Exchange the new heading would link to a page that
-does not exist.
+If you install by unzipping or with Git rather than through Composer, this
+release changes nothing for you — `version.php` was already correct.
 
-No database changes; no action required after upgrading beyond the usual
-`admin/cli/upgrade.php`.
+## Why this needs a release at all
+
+Composer metadata is fixed at a tag. Once Packagist has ingested `v1.0.4`
+there is no way to correct that tag's `composer.json` in place, so the fix has
+to ship as a new version.
 
 ## Checks run for this release
 
 `moodle-plugin-ci` phplint, phpmd, phpcs (`--max-warnings 0`), phpdoc
 (`--max-warnings 0`), validate, savepoints and mustache — the same commands
-this project's GitHub workflow runs — all exit 0. PHPUnit: **14 tests, 37
-assertions**, all passing. The link and its count were verified in a browser on
-a live site, including that a user holding `managesites` but not `moderate` is
-not shown it.
+this project's GitHub workflow runs — all exit 0. `composer validate` now
+passes with **no warnings**; against 1.0.4 it reported the unbound-constraint
+warning this release fixes. PHPUnit: 14 tests, 37 assertions, all passing.
