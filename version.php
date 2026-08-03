@@ -26,14 +26,17 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'block_oerexchangemodqueue';
 // Bumped for the new "Hidden by moderators" section and its lang string.
-// $plugin->release is deliberately unchanged — a release is the user's call.
-$plugin->version   = 2026080400;
+// Serial reads 20260804 rather than today's 20260803 because it must be
+// strictly greater than the previous one and the sequence was already a day
+// ahead of the calendar; strictly-increasing is what Moodle's upgrade check
+// uses, and lowering it would break upgrades on sites already carrying it.
+$plugin->version   = 2026080401;
 // 2025041400 = the Moodle 5.0 branching version — matches $supported's floor
 // (and composer.json's ">=5.0 <5.3"); was 2024100700 (Moodle 4.5), which let
 // a site below the tested range install the plugin.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 502];
-$plugin->release   = '1.0.3';
+$plugin->release   = '1.0.4';
 $plugin->maturity  = MATURITY_STABLE;
 
 // This block is presentation-layer only: it reads local_oerexchange's own

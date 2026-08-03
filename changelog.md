@@ -3,6 +3,27 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.4] - 2026-08-03
+
+### Added
+
+- A "Hidden by moderators (N)" section linking to `local_oerexchange`'s new
+  `moderate_hidden.php` report, shown to viewers holding
+  `local/oerexchange:moderate`. Counted by a new
+  `content_builder::get_modhidden_count()` querying the Exchange's tables
+  directly, as this block already does for open reports, failed parses and
+  pending sites. Counts `modhidden` only — the Exchange's stale-courseware
+  janitor writes `removed` automatically, so counting it would attribute
+  automatic removals to a moderator.
+
+### Changed
+
+- `$plugin->dependencies` pins `local_oerexchange` to 2026080400 (1.0.7)
+  instead of `ANY_VERSION`. The block references no new class from the parent,
+  so the rule about raising a version for a new symbol does not strictly apply
+  — but against an older parent the new heading links to a page that does not
+  exist, which is what that rule protects against.
+
 ## [1.0.3] - 2026-08-01
 
 ### Fixed

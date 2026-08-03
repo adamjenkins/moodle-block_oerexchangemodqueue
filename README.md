@@ -16,6 +16,11 @@ approves site registrations gets that section and nothing else.
   Links through to `moderate.php`.
 - **Failed parses** — count, and the most recent backup uploads whose
   structure parsing failed. Links through to `moderate.php`.
+- **Hidden by moderators** — how many resources a moderator is currently
+  holding. Links through to `moderate_hidden.php`, the Exchange's report of
+  what has already been taken down. Resources the Exchange removes
+  automatically as abandoned courseware are not counted — no moderator hid
+  them.
 - **Pending site registrations** — count, and the oldest few sites still
   awaiting approval. Links through to `manage_sites.php`.
 
@@ -28,9 +33,9 @@ of its own. It is presentation-layer only.
 
 - Moodle 5.0–5.2 (`$plugin->supported`).
 - [`local_oerexchange`](https://github.com/adamjenkins/moodle-local_oerexchange)
-  must already be installed — `version.php` declares it as a hard
-  dependency and the Moodle installer will refuse to install this block
-  without it.
+  **1.0.7 or later** must already be installed — `version.php` declares it as a
+  hard dependency, pinned to the build that adds the hidden-resources report,
+  and the Moodle installer will refuse to install this block without it.
 - The viewing/adding user needs `local/oerexchange:moderate` or
   `local/oerexchange:managesites` (both granted to the `manager` archetype
   by default); each governs its own section of the block.
