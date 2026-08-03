@@ -424,4 +424,82 @@ final class content_builder_test extends \advanced_testcase {
         // Exactly one escaped ampersand: not raw, and not double-escaped.
         $this->assertSame(1, substr_count($content->text, '&amp;'));
     }
+
+    /**
+     * get_modhidden_count() counts moderator takedowns only.
+     *
+     * 'removed' is deliberately excluded: the Exchange's stale-courseware
+     * janitor writes that status automatically, so counting it would put
+     * automatic removals under a heading that says a moderator hid them.
+     *
+     * @return void
+     */
+    public function test_modhidden_count_excludes_janitor_removals(): void {
+        $this->resetAfterTest();
+        global $DB;
+
+        $siteid = $this->insert_site('active', time());
+        $held = $this->insert_resource($siteid, 'Held by a moderator');
+        $removed = $this->insert_resource($siteid, 'Removed as abandoned');
+        $this->insert_resource($siteid, 'Perfectly fine');
+
+        $DB->set_field('local_oerexchange_resources', 'status', 'modhidden', ['id' => $held]);
+        $DB->set_field('local_oerexchange_resources', 'status', 'removed', ['id' => $removed]);
+
+        $this->assertSame(1, content_builder::get_modhidden_count());
+    }
+
+    /**
+     * The block links moderators to the hidden-resources report with a count.
+     *
+     * @return void
+     */
+    public function test_block_shows_hidden_resources_link_for_a_moderator(): void {
+        $this->resetAfterTest();
+        global $DB;
+
+        $siteid = $this->insert_site('active', time());
+        $held = $this->insert_resource($siteid, 'Held by a moderator');
+        $DB->set_field('local_oerexchange_resources', 'status', 'modhidden', ['id' => $held]);
+
+        $roleid = create_role('Moderator only', 'moderateonly', 'Holds moderate');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        assign_capability('local/oerexchange:moderate', CAP_ALLOW, $roleid, \context_system::instance()->id);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($roleid, $user->id, \context_system::instance()->id);
+        $this->setUser($user);
+
+        $content = $this->new_block()->get_content();
+
+        $this->assertStringContainsString('/local/oerexchange/moderate_hidden.php', $content->text);
+        $this->assertStringContainsString(
+            get_string('modqueue_hiddenresources', 'block_oerexchangemodqueue', 1),
+            $content->text
+        );
+    }
+
+    /**
+     * Someone without the moderate capability is not shown the report link.
+     *
+     * @return void
+     */
+    public function test_block_hides_hidden_resources_link_without_the_capability(): void {
+        $this->resetAfterTest();
+        global $DB;
+
+        $siteid = $this->insert_site('active', time());
+        $held = $this->insert_resource($siteid, 'Held by a moderator');
+        $DB->set_field('local_oerexchange_resources', 'status', 'modhidden', ['id' => $held]);
+
+        $roleid = create_role('Manage sites only 2', 'managesitesonly2', 'Holds managesites but not moderate');
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
+        assign_capability('local/oerexchange:managesites', CAP_ALLOW, $roleid, \context_system::instance()->id);
+        $user = $this->getDataGenerator()->create_user();
+        role_assign($roleid, $user->id, \context_system::instance()->id);
+        $this->setUser($user);
+
+        $content = $this->new_block()->get_content();
+
+        $this->assertStringNotContainsString('/local/oerexchange/moderate_hidden.php', $content->text);
+    }
 }

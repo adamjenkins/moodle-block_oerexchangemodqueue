@@ -44,6 +44,7 @@ class content_builder {
      * @return array{
      *     reportcount: int, reports: \stdClass[],
      *     failedparsecount: int, failedparses: \stdClass[],
+     *     hiddencount: int,
      *     sitecount: int, sites: \stdClass[]
      * }
      */
@@ -53,9 +54,28 @@ class content_builder {
             'reports' => $includemoderation ? self::get_recent_open_reports() : [],
             'failedparsecount' => $includemoderation ? self::get_failed_parse_count() : 0,
             'failedparses' => $includemoderation ? self::get_recent_failed_parses() : [],
+            'hiddencount' => $includemoderation ? self::get_modhidden_count() : 0,
             'sitecount' => $includesites ? self::get_pending_site_count() : 0,
             'sites' => $includesites ? self::get_recent_pending_sites() : [],
         ];
+    }
+
+    /**
+     * Count of resources a moderator is currently holding.
+     *
+     * 'modhidden' only, matching the report this count labels. 'removed' is
+     * excluded because the Exchange's stale-courseware janitor writes that
+     * status automatically, so counting it would attribute automatic removals
+     * to a moderator.
+     *
+     * Queried directly, like every other count in this class — the block reads
+     * local_oerexchange's tables rather than calling into it.
+     *
+     * @return int
+     */
+    public static function get_modhidden_count(): int {
+        global $DB;
+        return $DB->count_records('local_oerexchange_resources', ['status' => 'modhidden']);
     }
 
     /**

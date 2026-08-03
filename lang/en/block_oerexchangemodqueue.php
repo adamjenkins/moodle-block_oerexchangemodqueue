@@ -26,6 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['modqueue_deletedresource'] = '(deleted resource)';
 $string['modqueue_failedparses'] = 'Failed parses ({$a})';
+$string['modqueue_hiddenresources'] = 'Hidden by moderators ({$a})';
 $string['modqueue_openreports'] = 'Open reports ({$a})';
 $string['modqueue_pendingsites'] = 'Pending site registrations ({$a})';
 $string['oerexchangemodqueue:addinstance'] = 'Add a new OER Exchange moderation queue block';

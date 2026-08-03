@@ -26,6 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['modqueue_deletedresource'] = '（削除されたリソース）';
 $string['modqueue_failedparses'] = '解析失敗（{$a} 件）';
+$string['modqueue_hiddenresources'] = 'モデレータが非表示にしたリソース ({$a})';
 $string['modqueue_openreports'] = '未対応の報告（{$a} 件）';
 $string['modqueue_pendingsites'] = '承認待ちのサイト登録（{$a} 件）';
 $string['oerexchangemodqueue:addinstance'] = '新しい OER Exchange モデレーションキューブロックを追加する';

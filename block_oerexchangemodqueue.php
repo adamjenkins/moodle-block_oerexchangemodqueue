@@ -115,6 +115,7 @@ class block_oerexchangemodqueue extends block_base {
      */
     protected function render_summary(array $summary, bool $canmoderate, bool $canmanagesites): string {
         $moderateurl = new moodle_url('/local/oerexchange/moderate.php');
+        $hiddenurl = new moodle_url('/local/oerexchange/moderate_hidden.php');
         $sitesurl = new moodle_url('/local/oerexchange/manage_sites.php');
 
         $sections = [];
@@ -140,6 +141,16 @@ class block_oerexchangemodqueue extends block_base {
                         : get_string('modqueue_deletedresource', 'block_oerexchangemodqueue');
                     return format_string($title, true, ['context' => \core\context\system::instance()]);
                 }
+            );
+            // A heading-only section: the standing list of what has already
+            // been taken down belongs on its own report, not inlined here
+            // alongside the incoming work. render_section() emits just the
+            // linked heading when given no items.
+            $sections[] = $this->render_section(
+                get_string('modqueue_hiddenresources', 'block_oerexchangemodqueue', $summary['hiddencount']),
+                $hiddenurl,
+                [],
+                fn(): string => ''
             );
         }
         if ($canmanagesites) {
