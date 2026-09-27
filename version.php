@@ -34,10 +34,10 @@ $plugin->component = 'block_oerexchangemodqueue';
 // uses, and lowering it would break upgrades on sites already carrying it.
 $plugin->version   = 2026080402;
 // 2025041400 = the Moodle 5.0 branching version — matches $supported's floor
-// (and composer.json's ">=5.0 <5.3"); was 2024100700 (Moodle 4.5), which let
+// (and composer.json's ">=5.0 <5.4"); was 2024100700 (Moodle 4.5), which let
 // a site below the tested range install the plugin.
 $plugin->requires  = 2025041400;
-$plugin->supported = [500, 502];
+$plugin->supported = [500, 503];
 $plugin->release   = '1.0.5';
 $plugin->maturity  = MATURITY_STABLE;
 

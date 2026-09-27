@@ -31,7 +31,7 @@ of its own. It is presentation-layer only.
 
 ## Requirements
 
-- Moodle 5.0–5.2 (`$plugin->supported`).
+- Moodle 5.0–5.3 (`$plugin->supported`).
 - [`local_oerexchange`](https://github.com/adamjenkins/moodle-local_oerexchange)
   **1.0.7 or later** must already be installed — `version.php` declares it as a
   hard dependency, pinned to the build that adds the hidden-resources report,
