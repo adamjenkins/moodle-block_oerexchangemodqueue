@@ -32,13 +32,13 @@ $plugin->component = 'block_oerexchangemodqueue';
 // strictly greater than the previous one and the sequence was already a day
 // ahead of the calendar; strictly-increasing is what Moodle's upgrade check
 // uses, and lowering it would break upgrades on sites already carrying it.
-$plugin->version   = 2026100400;
+$plugin->version   = 2026100401;
 // 2025041400 = the Moodle 5.0 branching version — matches $supported's floor
 // (and composer.json's ">=5.0 <5.4"); was 2024100700 (Moodle 4.5), which let
 // a site below the tested range install the plugin.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 503];
-$plugin->release   = '1.0.6';
+$plugin->release   = '1.0.7';
 $plugin->maturity  = MATURITY_STABLE;
 
 // This block is presentation-layer only: it reads local_oerexchange's own
