@@ -3,7 +3,7 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [Unreleased]
+## [1.0.6] - 2026-10-04
 
 ### Changed
 
@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file, in
   (`>=5.0 <5.4`). No code change was needed: the Moodle 5.3 upgrade notes
   were checked against this block and nothing it uses was removed or
   changed.
+- The distribution ZIP now includes `tests/` (no longer `export-ignore`d).
 
 ## [1.0.5] - 2026-08-03
 
