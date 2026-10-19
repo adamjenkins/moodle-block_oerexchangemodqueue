@@ -97,7 +97,12 @@ final class content_builder_test extends \advanced_testcase {
     }
 
     /**
-     * Insert a local_oerexchange_reports row.
+     * Insert a local_oerexchange_reports row about a RESOURCE.
+     *
+     * collectionid is passed explicitly as null rather than left out: the
+     * table is polymorphic, and a row is meant to carry exactly one of the
+     * two target columns, which a test fixture should state rather than
+     * leave to the column default.
      *
      * @param int $resourceid
      * @param string $status
@@ -107,8 +112,60 @@ final class content_builder_test extends \advanced_testcase {
         global $DB;
         $DB->insert_record('local_oerexchange_reports', (object) [
             'resourceid' => $resourceid,
+            'collectionid' => null,
             'userid' => 2,
             'type' => 'quality',
+            'details' => 'details',
+            'status' => $status,
+            'resolvernote' => null,
+            'timecreated' => $timecreated,
+            'timeresolved' => null,
+        ]);
+    }
+
+    /**
+     * Insert a local_oerexchange_collections row and return its id.
+     *
+     * @param string $title
+     * @param string $slug must be unique — the column is
+     * @param array $overrides any column to set differently
+     * @return int
+     */
+    protected function insert_collection(string $title, string $slug, array $overrides = []): int {
+        global $DB;
+        $now = time();
+        return (int) $DB->insert_record('local_oerexchange_collections', (object) array_merge([
+            'userid' => 2,
+            'slug' => $slug,
+            'title' => $title,
+            'summary' => '',
+            'summaryformat' => FORMAT_HTML,
+            'visibility' => 'public',
+            'status' => 'active',
+            'modhidden' => 0,
+            'modhiddentime' => 0,
+            'modhiddenby' => 0,
+            'opencuration' => 0,
+            'timepublished' => $now,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ], $overrides));
+    }
+
+    /**
+     * Insert a local_oerexchange_reports row about a COLLECTION.
+     *
+     * @param int $collectionid
+     * @param string $status
+     * @param int $timecreated
+     */
+    protected function insert_collection_report(int $collectionid, string $status, int $timecreated): void {
+        global $DB;
+        $DB->insert_record('local_oerexchange_reports', (object) [
+            'resourceid' => null,
+            'collectionid' => $collectionid,
+            'userid' => 2,
+            'type' => 'spam',
             'details' => 'details',
             'status' => $status,
             'resolvernote' => null,
@@ -501,5 +558,158 @@ final class content_builder_test extends \advanced_testcase {
         $content = $this->new_block()->get_content();
 
         $this->assertStringNotContainsString('/local/oerexchange/moderate_hidden.php', $content->text);
+    }
+
+    /**
+     * The polymorphic-reports regression, pinned in both directions:
+     * {local_oerexchange_reports} carries resource reports and collection
+     * reports in one table, and the resource figures used to count the whole
+     * table. A collection report would have inflated "open reports" and then
+     * rendered in the recent list as a deleted resource, because the LEFT
+     * JOIN on resourceid cannot match it.
+     *
+     * @return void
+     */
+    public function test_resource_and_collection_reports_are_counted_separately(): void {
+        $this->resetAfterTest();
+
+        $siteid = $this->insert_site('active', time());
+        $resourceid = $this->insert_resource($siteid, 'A reported resource');
+        $collectionid = $this->insert_collection('A reported collection', 'a-reported-collection');
+
+        $this->insert_report($resourceid, 'open', time());
+        $this->insert_collection_report($collectionid, 'open', time());
+        $this->insert_collection_report($collectionid, 'open', time() + 1);
+        // Neither figure counts a resolved report, of either kind.
+        $this->insert_report($resourceid, 'resolved', time());
+        $this->insert_collection_report($collectionid, 'dismissed', time());
+
+        $summary = content_builder::get_summary();
+
+        $this->assertSame(1, $summary['reportcount'], 'collection reports must not reach the resource figure');
+        $this->assertSame(2, $summary['collectionreportcount'], 'resource reports must not reach the collection figure');
+
+        $this->assertCount(1, $summary['reports']);
+        $this->assertSame('A reported resource', $summary['reports'][0]->resourcetitle);
+        $this->assertCount(2, $summary['collectionreports']);
+        $this->assertSame('A reported collection', $summary['collectionreports'][0]->collectiontitle);
+    }
+
+    /**
+     * A report whose collection row has gone lists with a null title, the
+     * same contract the resource lists have, so the block can render its
+     * placeholder rather than an empty line.
+     *
+     * @return void
+     */
+    public function test_recent_collection_reports_are_null_titled_when_the_collection_is_gone(): void {
+        $this->resetAfterTest();
+
+        $this->insert_collection_report(999999, 'open', time());
+
+        $summary = content_builder::get_summary();
+
+        $this->assertCount(1, $summary['collectionreports']);
+        $this->assertNull($summary['collectionreports'][0]->collectiontitle);
+    }
+
+    /**
+     * The held-collections figure counts active collections a moderator is
+     * holding, and nothing else: not a tombstone that happens to still carry
+     * the flag (moderate_hidden.php offers it no restore), and not a
+     * collection the moderators have never touched.
+     *
+     * @return void
+     */
+    public function test_modhidden_collection_count_counts_only_active_held_collections(): void {
+        $this->resetAfterTest();
+
+        $now = time();
+        $this->insert_collection('Held', 'held', ['modhidden' => 1, 'modhiddentime' => $now, 'modhiddenby' => 2]);
+        $this->insert_collection('Also held', 'also-held', ['modhidden' => 1, 'modhiddentime' => $now]);
+        $this->insert_collection('Held then deleted', 'held-then-deleted', [
+            'modhidden' => 1,
+            'modhiddentime' => $now,
+            'status' => 'deleted',
+        ]);
+        $this->insert_collection('Untouched', 'untouched');
+
+        $summary = content_builder::get_summary();
+
+        $this->assertSame(2, $summary['hiddencollectioncount']);
+    }
+
+    /**
+     * End to end through the block: a moderator sees the reported
+     * collection's title and both new headings; the counts in those headings
+     * are the separated ones.
+     *
+     * @return void
+     */
+    public function test_get_content_shows_the_collection_sections_for_a_manager(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $collectionid = $this->insert_collection('Marine biology reading list', 'marine-biology-reading-list');
+        $this->insert_collection_report($collectionid, 'open', time());
+        $this->insert_collection('Held list', 'held-list', ['modhidden' => 1, 'modhiddentime' => time()]);
+
+        $manager = $this->getDataGenerator()->create_user();
+        $managerroleid = $DB->get_field('role', 'id', ['shortname' => 'manager'], MUST_EXIST);
+        role_assign($managerroleid, $manager->id, \context_system::instance()->id);
+        $this->setUser($manager);
+
+        $content = $this->new_block()->get_content();
+
+        $this->assertStringContainsString('Marine biology reading list', $content->text);
+        $this->assertStringContainsString(
+            get_string('modqueue_collectionreports', 'block_oerexchangemodqueue', 1),
+            $content->text
+        );
+        $this->assertStringContainsString(
+            get_string('modqueue_hiddencollections', 'block_oerexchangemodqueue', 1),
+            $content->text
+        );
+        // The resource figure stays at zero: the only open report on this
+        // site is about a collection.
+        $this->assertStringContainsString(
+            get_string('modqueue_openreports', 'block_oerexchangemodqueue', 0),
+            $content->text
+        );
+    }
+
+    /**
+     * A collection title is free text entered by its owner, so it gets the
+     * same multilang filtering (and single escaping) the resource and site
+     * names already get — s() would have shown literal `<span ...>` markup.
+     *
+     * @return void
+     */
+    public function test_get_content_renders_collection_titles_through_multilang(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        filter_set_global_state('multilang', TEXTFILTER_ON);
+        set_config('filterall', 1);
+        set_config('stringfilters', 'multilang');
+
+        $title = '<span lang="en" class="multilang">Rivers &amp; Deltas</span>'
+            . '<span lang="ja" class="multilang">河川と三角州</span>';
+
+        $collectionid = $this->insert_collection($title, 'rivers-and-deltas');
+        $this->insert_collection_report($collectionid, 'open', time());
+
+        $manager = $this->getDataGenerator()->create_user();
+        $managerroleid = $DB->get_field('role', 'id', ['shortname' => 'manager'], MUST_EXIST);
+        role_assign($managerroleid, $manager->id, \context_system::instance()->id);
+        $this->setUser($manager);
+
+        $content = $this->new_block()->get_content();
+
+        $this->assertStringNotContainsString('河川と三角州', $content->text);
+        $this->assertStringNotContainsString('multilang', $content->text);
+        $this->assertStringNotContainsString('&amp;amp;', $content->text);
+        $this->assertSame(1, substr_count($content->text, 'Rivers &amp; Deltas'));
+        $this->assertSame(0, substr_count($content->text, 'Rivers & Deltas'));
     }
 }

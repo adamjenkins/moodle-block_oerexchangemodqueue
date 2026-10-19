@@ -20,8 +20,9 @@ use block_oerexchangemodqueue\local\content_builder;
  * OER Exchange: moderation queue block.
  *
  * A Dashboard block for moderators only: at-a-glance counts (and a few
- * recent items) of open reports, failed backup parses, and pending site
- * registrations, linking to local_oerexchange's own moderate.php and
+ * recent items) of open reports — about resources and about collections,
+ * counted separately — failed backup parses, and pending site registrations,
+ * linking to local_oerexchange's own moderate.php, moderate_hidden.php and
  * manage_sites.php pages to act on them.
  *
  * Visibility is gated twice, deliberately (this is the one Exchange block
@@ -131,6 +132,27 @@ class block_oerexchangemodqueue extends block_base {
                     return format_string($title, true, ['context' => \core\context\system::instance()]);
                 }
             );
+            // Collections are reportable from local_oerexchange 2026101900,
+            // and their reports are a separate figure and a separate list —
+            // not more rows under "Open resource reports". The two are
+            // different work: a resource takedown holds a file, a collection
+            // takedown holds somebody's reading list. Both links land on
+            // moderate.php, which now has a section for each.
+            $sections[] = $this->render_section(
+                get_string(
+                    'modqueue_collectionreports',
+                    'block_oerexchangemodqueue',
+                    $summary['collectionreportcount']
+                ),
+                $moderateurl,
+                $summary['collectionreports'],
+                function (stdClass $report): string {
+                    $title = $report->collectiontitle !== null
+                        ? $report->collectiontitle
+                        : get_string('modqueue_deletedcollection', 'block_oerexchangemodqueue');
+                    return format_string($title, true, ['context' => \core\context\system::instance()]);
+                }
+            );
             $sections[] = $this->render_section(
                 get_string('modqueue_failedparses', 'block_oerexchangemodqueue', $summary['failedparsecount']),
                 $moderateurl,
@@ -148,6 +170,20 @@ class block_oerexchangemodqueue extends block_base {
             // linked heading when given no items.
             $sections[] = $this->render_section(
                 get_string('modqueue_hiddenresources', 'block_oerexchangemodqueue', $summary['hiddencount']),
+                $hiddenurl,
+                [],
+                fn(): string => ''
+            );
+            // A second heading-only line rather than a figure folded into the
+            // one above: moderate_hidden.php lists held resources and held
+            // collections as two lists, and a single combined number would
+            // match neither of them.
+            $sections[] = $this->render_section(
+                get_string(
+                    'modqueue_hiddencollections',
+                    'block_oerexchangemodqueue',
+                    $summary['hiddencollectioncount']
+                ),
                 $hiddenurl,
                 [],
                 fn(): string => ''

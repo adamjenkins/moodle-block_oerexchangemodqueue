@@ -17,9 +17,17 @@
 namespace block_oerexchangemodqueue\local;
 
 /**
- * Builds the moderation-queue summary shown by the block: pending reports,
- * failed backup parses, and pending site registrations, each with a count
- * and a handful of the most recent items.
+ * Builds the moderation-queue summary shown by the block: pending reports
+ * (about resources and, separately, about collections), failed backup parses,
+ * and pending site registrations, each with a count and a handful of the most
+ * recent items, plus the standing counts of what moderators are holding.
+ *
+ * Reports about resources and reports about collections are counted and
+ * listed separately, never together. {local_oerexchange_reports} is
+ * polymorphic from local_oerexchange build 2026101900 — resourceid nullable,
+ * collectionid added nullable, exactly one of the two set — so every query
+ * here names which kind it wants. A query that does not is not merely
+ * incomplete: it reports collection reports as deleted resources.
  *
  * Pure data layer, deliberately kept free of capability checks and output
  * markup so it can be unit-tested directly — the capability gate lives in
@@ -43,8 +51,9 @@ class content_builder {
      * @param bool $includesites pending sites (viewer holds local/oerexchange:managesites)
      * @return array{
      *     reportcount: int, reports: \stdClass[],
+     *     collectionreportcount: int, collectionreports: \stdClass[],
      *     failedparsecount: int, failedparses: \stdClass[],
-     *     hiddencount: int,
+     *     hiddencount: int, hiddencollectioncount: int,
      *     sitecount: int, sites: \stdClass[]
      * }
      */
@@ -52,9 +61,12 @@ class content_builder {
         return [
             'reportcount' => $includemoderation ? self::get_open_report_count() : 0,
             'reports' => $includemoderation ? self::get_recent_open_reports() : [],
+            'collectionreportcount' => $includemoderation ? self::get_open_collection_report_count() : 0,
+            'collectionreports' => $includemoderation ? self::get_recent_open_collection_reports() : [],
             'failedparsecount' => $includemoderation ? self::get_failed_parse_count() : 0,
             'failedparses' => $includemoderation ? self::get_recent_failed_parses() : [],
             'hiddencount' => $includemoderation ? self::get_modhidden_count() : 0,
+            'hiddencollectioncount' => $includemoderation ? self::get_modhidden_collection_count() : 0,
             'sitecount' => $includesites ? self::get_pending_site_count() : 0,
             'sites' => $includesites ? self::get_recent_pending_sites() : [],
         ];
@@ -79,18 +91,76 @@ class content_builder {
     }
 
     /**
-     * Count of open reports.
+     * Count of collections a moderator is currently holding.
+     *
+     * Active collections only: a tombstoned one keeps its modhidden flag, but
+     * it is already gone as far as the public is concerned and
+     * moderate_hidden.php offers no Restore for it — so counting it here would
+     * promise a row that report does not show.
+     *
+     * @return int
+     */
+    public static function get_modhidden_collection_count(): int {
+        global $DB;
+        if (!self::collections_ready()) {
+            return 0;
+        }
+        return $DB->count_records('local_oerexchange_collections', [
+            'modhidden' => 1,
+            'status' => 'active',
+        ]);
+    }
+
+    /**
+     * Whether the Exchange's collections schema is in the database yet.
+     *
+     * The dependency pin stops this block installing against an older
+     * Exchange, but not the window between deploying both plugins' files and
+     * an admin running the upgrade: in that window the code is new and the
+     * schema is old, and a moderator's Dashboard would otherwise fatal on the
+     * missing table or column. Both are checked because the upgrade step adds
+     * them together but they are separate DDL statements. Cached per request.
+     *
+     * @return bool
+     */
+    protected static function collections_ready(): bool {
+        global $DB;
+
+        static $ready = null;
+        if ($ready === null) {
+            $dbman = $DB->get_manager();
+            $ready = $dbman->table_exists('local_oerexchange_collections')
+                && $dbman->field_exists('local_oerexchange_reports', 'collectionid');
+        }
+
+        return $ready;
+    }
+
+    /**
+     * Count of open reports about a RESOURCE.
+     *
+     * The explicit `resourceid IS NOT NULL` is the point of this method:
+     * {local_oerexchange_reports} is polymorphic from local_oerexchange build
+     * 2026101900 (resourceid became nullable, a nullable collectionid was
+     * added, exactly one of the two is set on a row). Counting the whole table
+     * under a heading that links to the resource queue and sits above a list
+     * of resource titles would have quietly inflated this figure by every
+     * collection report on the site.
      *
      * @return int
      */
     public static function get_open_report_count(): int {
         global $DB;
-        return $DB->count_records('local_oerexchange_reports', ['status' => 'open']);
+        return $DB->count_records_select(
+            'local_oerexchange_reports',
+            'status = :status AND resourceid IS NOT NULL',
+            ['status' => 'open']
+        );
     }
 
     /**
-     * Most recent open reports, oldest-created queue order matching
-     * moderate.php, each enriched with the reported resource's title.
+     * Most recent open reports about a resource, oldest-created queue order
+     * matching moderate.php, each enriched with the reported resource's title.
      *
      * @return \stdClass[] each with ->id, ->resourceid, ->type, ->timecreated, ->resourcetitle
      */
@@ -100,11 +170,68 @@ class content_builder {
         // LEFT JOIN so a report whose resource row is gone still lists, with
         // resourcetitle null (rendered as the "deleted resource" label) —
         // and one query instead of one per row.
+        //
+        // `r.resourceid IS NOT NULL` for the reason given on
+        // get_open_report_count(): without it a collection report arrives here
+        // as a row the join cannot match, and renders as a resource that has
+        // been deleted — a wrong answer rather than a missing one.
         return array_values($DB->get_records_sql(
             "SELECT r.*, res.title AS resourcetitle
                FROM {local_oerexchange_reports} r
           LEFT JOIN {local_oerexchange_resources} res ON res.id = r.resourceid
               WHERE r.status = :status
+                    AND r.resourceid IS NOT NULL
+           ORDER BY r.timecreated ASC",
+            ['status' => 'open'],
+            0,
+            self::RECENT_LIMIT
+        ));
+    }
+
+    /**
+     * Count of open reports about a COLLECTION.
+     *
+     * @return int
+     */
+    public static function get_open_collection_report_count(): int {
+        global $DB;
+        if (!self::collections_ready()) {
+            return 0;
+        }
+        return $DB->count_records_select(
+            'local_oerexchange_reports',
+            'status = :status AND collectionid IS NOT NULL',
+            ['status' => 'open']
+        );
+    }
+
+    /**
+     * Most recent open reports about a collection, in the same oldest-first
+     * queue order moderate.php's collections section uses, each enriched with
+     * the reported collection's title.
+     *
+     * The collection's title is aliased rather than selected as `c.*`: reports
+     * and collections share id, status and timecreated column names, so a
+     * wildcard would have overwritten half of each report row with the
+     * collection's values.
+     *
+     * @return \stdClass[] each with ->id, ->collectionid, ->type, ->timecreated, ->collectiontitle
+     */
+    public static function get_recent_open_collection_reports(): array {
+        global $DB;
+        if (!self::collections_ready()) {
+            return [];
+        }
+
+        // Same LEFT JOIN rationale as get_recent_open_reports(): a report
+        // whose collection row has gone (a privacy erasure — the owner's own
+        // delete tombstones the row instead) still lists, with a null title.
+        return array_values($DB->get_records_sql(
+            "SELECT r.*, c.title AS collectiontitle
+               FROM {local_oerexchange_reports} r
+          LEFT JOIN {local_oerexchange_collections} c ON c.id = r.collectionid
+              WHERE r.status = :status
+                    AND r.collectionid IS NOT NULL
            ORDER BY r.timecreated ASC",
             ['status' => 'open'],
             0,

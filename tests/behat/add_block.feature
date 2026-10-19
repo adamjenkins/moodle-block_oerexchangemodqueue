@@ -9,4 +9,5 @@ Feature: Add the OER Exchange moderation queue block to the Dashboard
     And I visit "/my/"
     And I turn editing mode on
     When I add the "OER Exchange: moderation queue" block
-    Then I should see "Open reports (0)" in the "OER Exchange: moderation queue" "block"
+    Then I should see "Open resource reports (0)" in the "OER Exchange: moderation queue" "block"
+    And I should see "Open collection reports (0)" in the "OER Exchange: moderation queue" "block"

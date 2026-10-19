@@ -24,10 +24,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['modqueue_collectionreports'] = 'Open collection reports ({$a})';
+$string['modqueue_deletedcollection'] = '(deleted collection)';
 $string['modqueue_deletedresource'] = '(deleted resource)';
 $string['modqueue_failedparses'] = 'Failed parses ({$a})';
+$string['modqueue_hiddencollections'] = 'Collections taken down ({$a})';
 $string['modqueue_hiddenresources'] = 'Hidden by moderators ({$a})';
-$string['modqueue_openreports'] = 'Open reports ({$a})';
+$string['modqueue_openreports'] = 'Open resource reports ({$a})';
 $string['modqueue_pendingsites'] = 'Pending site registrations ({$a})';
 $string['oerexchangemodqueue:addinstance'] = 'Add a new OER Exchange moderation queue block';
 $string['oerexchangemodqueue:myaddinstance'] = 'Add a new OER Exchange moderation queue block to Dashboard';
