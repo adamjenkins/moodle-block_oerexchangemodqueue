@@ -4,7 +4,8 @@ A Moodle Dashboard block for **OER Exchange** moderators: a single
 at-a-glance summary of what needs attention, with links straight to the
 pages that let you act on it.
 
-Each section is gated on its own capability: reports and failed parses on
+Each section is gated on its own capability: reports (about resources and
+about collections) and failed parses on
 `local/oerexchange:moderate`, pending site registrations on
 `local/oerexchange:managesites`. A user holding neither sees empty content
 even if an instance somehow ended up on their page, so someone who only
@@ -12,8 +13,13 @@ approves site registrations gets that section and nothing else.
 
 ## What it shows
 
-- **Open reports** — count, and the oldest few still awaiting review, each
-  Links through to `moderate.php`.
+- **Open resource reports** — count, and the oldest few still awaiting
+  review. Links through to `moderate.php`.
+- **Open collection reports** — count, and the titles of the oldest few
+  collections still awaiting review. Links through to `moderate.php`, which
+  has a collections section of its own. Counted separately from resource
+  reports throughout: the Exchange keeps both kinds in one table, and a
+  report is about a resource *or* about a collection, never both.
 - **Failed parses** — count, and the most recent backup uploads whose
   structure parsing failed. Links through to `moderate.php`.
 - **Hidden by moderators** — how many resources a moderator is currently
@@ -21,6 +27,11 @@ approves site registrations gets that section and nothing else.
   what has already been taken down. Resources the Exchange removes
   automatically as abandoned courseware are not counted — no moderator hid
   them.
+- **Collections taken down** — how many collections a moderator is
+  currently holding, also linking to `moderate_hidden.php`, which lists held
+  collections beside held resources. Collections their owner has deleted are
+  not counted, even if a moderator had taken one down first: there is nothing
+  left to restore.
 - **Pending site registrations** — count, and the oldest few sites still
   awaiting approval. Links through to `manage_sites.php`.
 
@@ -33,9 +44,11 @@ of its own. It is presentation-layer only.
 
 - Moodle 5.0–5.3 (`$plugin->supported`).
 - [`local_oerexchange`](https://github.com/adamjenkins/moodle-local_oerexchange)
-  **1.0.7 or later** must already be installed — `version.php` declares it as a
-  hard dependency, pinned to the build that adds the hidden-resources report,
-  and the Moodle installer will refuse to install this block without it.
+  **1.1.0 (build 2026101900) or later** must already be installed — `version.php`
+  declares it as a hard dependency, pinned to the build that adds collections,
+  and the Moodle installer will refuse to install this block without it. This
+  block reads the collections table and the reports table's `collectionid`
+  column, so the pin guards columns rather than only a link.
 - The viewing/adding user needs `local/oerexchange:moderate` or
   `local/oerexchange:managesites` (both granted to the `manager` archetype
   by default); each governs its own section of the block.

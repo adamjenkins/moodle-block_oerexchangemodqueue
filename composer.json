@@ -16,6 +16,6 @@
     "require": {
         "moodle/moodle": "^5.0",
         "moodle/composer-installer": "^1.0",
-        "adamjenkins/moodle-local_oerexchange": "^1.0.7"
+        "adamjenkins/moodle-local_oerexchange": "^1.1.0"
     }
 }

@@ -4,12 +4,15 @@
 name: "OER Exchange: moderation queue"
 summary: "A Moodle Dashboard block for OER Exchange moderators: an at-a-glance summary of what needs attention, linking straight to the pages that act on it."
 description: |
-  Three sections, each counting what is outstanding and listing the first few
-  items:
+  Sections counting what is outstanding and listing the first few items:
 
-  - **Open reports** — reports still awaiting review, oldest first.
+  - **Open resource reports** — reports about a shared resource, oldest first.
+  - **Open collection reports** — reports about a curated collection, counted
+    and listed separately, because a report is about one or the other.
   - **Failed parses** — the most recent backup uploads whose structure parsing
     failed.
+  - **Hidden by moderators** / **Collections taken down** — what moderators
+    are currently holding, linking to the Exchange's hidden-content report.
   - **Pending site registrations** — sites still awaiting approval, oldest
     first.
 
