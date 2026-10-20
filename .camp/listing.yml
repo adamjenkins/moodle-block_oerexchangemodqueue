@@ -32,6 +32,6 @@ labels:
 links:
   docs: https://github.com/adamjenkins/moodle-block_oerexchangemodqueue#readme
   issues: https://github.com/adamjenkins/moodle-block_oerexchangemodqueue/issues
-# screenshots:
-#   - path: .camp/screenshots/overview.png
-#     caption: Main view
+screenshots:
+  - path: .camp/screenshots/01-dashboard.png
+    caption: "Everything that needs a moderator, with counts and links to act on it."

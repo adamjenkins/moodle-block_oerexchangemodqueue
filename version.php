@@ -38,13 +38,15 @@ $plugin->component = 'block_oerexchangemodqueue';
 // record. This block has no schema and no upgrade.php of its own — the serial
 // moves so the new lang strings are re-read and the raised dependency pin
 // below is re-evaluated.
-$plugin->version   = 2026101900;
+// 2026102001 is the 1.0.9 release: camp listing screenshots only, no code
+// change. Its dependency pin below stays on 2026101900.
+$plugin->version   = 2026102001;
 // 2025041400 = the Moodle 5.0 branching version — matches $supported's floor
 // (and composer.json's ">=5.0 <5.4"); was 2024100700 (Moodle 4.5), which let
 // a site below the tested range install the plugin.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 503];
-$plugin->release   = '1.0.8';
+$plugin->release   = '1.0.9';
 $plugin->maturity  = MATURITY_STABLE;
 
 // This block is presentation-layer only: it reads local_oerexchange's own

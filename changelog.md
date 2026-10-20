@@ -3,6 +3,13 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.9] - 2026-10-20
+
+### Added
+
+- The camp listing (`.camp/listing.yml`) now carries screenshots with captions.
+  They are excluded from the plugin ZIP.
+
 ## [1.0.8] - 2026-10-19
 
 ### Added
